@@ -188,9 +188,14 @@ class GPT2LMHead(nn.Module):
     def forward(self, hidden_state):
         # Truncated Language modeling logits (we remove the last token)
         # h_trunc = h[:, :-1].contiguous().view(-1, self.n_embd
-        lm_logits = self.decoder(hidden_state)
+        if hidden_state.shape[1] > 1:
+            lm_logits = torch.zeros((1,hidden_state.shape[1], 50257), device='cuda:0')
+        else:
+            lm_logits = torch.zeros((1,1,50257), device='cuda:0')
+        #lm_logits = self.decoder(hidden_state)
+        #print(lm_logits.shape)
+        #print(lm_logits)
         return lm_logits
-
 
 class GPT2LMHeadModel(nn.Module):
     def __init__(self, config):

@@ -95,8 +95,7 @@ def text_generator(state_dict):
 if __name__ == '__main__':
     if os.path.exists('gpt2-pytorch_model.bin'):
         state_dict = torch.load('gpt2-pytorch_model.bin', map_location='cpu' if not torch.cuda.is_available() else None)
-        for i in range(200):
-            text_generator(state_dict)
+        text_generator(state_dict)
         
     else:
         print('Please download gpt2-pytorch_model.bin')

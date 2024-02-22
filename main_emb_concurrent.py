@@ -10,7 +10,7 @@ import random
 import argparse
 import numpy as np
 import time
-from GPT2.model import (GPT2LMHeadModel)
+from GPT2.model_emb_concurrent import (GPT2LMHeadModel)
 from GPT2.utils import load_weight
 from GPT2.config import GPT2Config
 from GPT2.sample import sample_sequence
@@ -95,8 +95,7 @@ def text_generator(state_dict):
 if __name__ == '__main__':
     if os.path.exists('gpt2-pytorch_model.bin'):
         state_dict = torch.load('gpt2-pytorch_model.bin', map_location='cpu' if not torch.cuda.is_available() else None)
-        for i in range(200):
-            text_generator(state_dict)
+        text_generator(state_dict)
         
     else:
         print('Please download gpt2-pytorch_model.bin')
