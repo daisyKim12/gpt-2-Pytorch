@@ -125,6 +125,7 @@ class Block(nn.Module):
         x = x + m
         return x, present
 
+# contains embedding layer
 class GPT2Model(nn.Module):
     def __init__(self, config):
         super(GPT2Model, self).__init__()
@@ -177,6 +178,7 @@ class GPT2Model(nn.Module):
                
         return hidden_states.view(*output_shape), presents
 
+# linear layer after attention layer and before softmax layer
 class GPT2LMHead(nn.Module):
     def __init__(self, model_embeddings_weights, config):
         super(GPT2LMHead, self).__init__()

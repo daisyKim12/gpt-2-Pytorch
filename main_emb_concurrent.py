@@ -64,8 +64,11 @@ def text_generator(state_dict):
     elif args.length > config.n_ctx:
         raise ValueError("Can't get samples longer than window size: %s" % config.n_ctx)
 
-    print(args.text)
+    print("input text: ", args.text)
     context_tokens = enc.encode(args.text)
+    print("context_tokens: ", context_tokens)
+    # input text:  hello my name is
+    # context_tokens:  [31373, 616, 1438, 318]
 
     generated = 0
     for _ in range(args.nsamples // args.batch_size):
@@ -89,6 +92,8 @@ def text_generator(state_dict):
         print("run_time:", run_time, "sec")
         print("run_time per token:", run_time / len(out[0]), "sec")
         append_runtime('runtimes.txt', run_time / len(out[0]))
+
+        # scalar to string
         for i in range(args.batch_size):
             generated += 1
             text = enc.decode(out[i])

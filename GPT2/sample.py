@@ -32,22 +32,27 @@ def sample_sequence(model, length, start_token=None, batch_size=None, context=No
     past = None
     with torch.no_grad():
         # for i in range(length): # length is 512
-        for i in range(40):
+        for i in range(10):
             # run model
             logits, past = model(prev, past=past)
 
             print("<iteration " , i, ">")
             print("logits: (type)", type(logits), "(shape) ", logits.shape)
             print("past <kv cache>: (type)", type(past), "(size) ", len(past))
+            # logits: (type) <class 'torch.Tensor'> (shape)  torch.Size([1, 1, 50257])
+            # past <kv cache>: (type) <class 'list'> (size)  12
             
-            logits = logits[:, -1, :] / temperature
+            ## inverse embedding after linear layer
+            logits = logits[:, -1, :] / temperature 
             logits = top_k_logits(logits, k=top_k)
             log_probs = F.softmax(logits, dim=-1)
             if sample:
                 prev = torch.multinomial(log_probs, num_samples=1)
             else:
                 _, prev = torch.topk(log_probs, k=1, dim=-1)
-
+            
             print("prev: ", prev)
+            # prev:  tensor([[661]], device='cuda:0')
+
             output = torch.cat((output, prev), dim=1)
     return output
