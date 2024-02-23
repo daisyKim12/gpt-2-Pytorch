@@ -144,29 +144,32 @@ class GPT2Model(nn.Module):
         self.decoder = nn.Linear(embed_shape[1], embed_shape[0], bias=False)
         self.decoder.weight = model_embeddings_weights  # Tied weights
 
-    def forward(self, input_ids, position_ids=None, token_type_ids=None, past=None):
-        if past is None:
-            past_length = 0
-            past = [None] * len(self.h)
-        else:
-            past_length = past[0][0].size(-2)
-        if position_ids is None:
-            position_ids = torch.arange(past_length, input_ids.size(-1) + past_length, dtype=torch.long,
-                                        device=input_ids.device)
-            position_ids = position_ids.unsqueeze(0).expand_as(input_ids)
+    def forward(self, input_hidden, position_ids=None, token_type_ids=None, past=None):
+        # if past is None:
+        #     past_length = 0
+        #     past = [None] * len(self.h)
+        # else:
+        #     past_length = past[0][0].size(-2)
+        # if position_ids is None:
+        #     position_ids = torch.arange(past_length, input_ids.size(-1) + past_length, dtype=torch.long,
+        #                                 device=input_ids.device)
+        #     position_ids = position_ids.unsqueeze(0).expand_as(input_ids)
 
-        input_shape = input_ids.size()
-        input_ids = input_ids.view(-1, input_ids.size(-1))
-        position_ids = position_ids.view(-1, position_ids.size(-1))
+        # input_shape = input_ids.size()
+        # input_ids = input_ids.view(-1, input_ids.size(-1))
+        # position_ids = position_ids.view(-1, position_ids.size(-1))
 
-        inputs_embeds = self.wte(input_ids)
-        position_embeds = self.wpe(position_ids)
-        if token_type_ids is not None:
-            token_type_ids = token_type_ids.view(-1, token_type_ids.size(-1))
-            token_type_embeds = self.wte(token_type_ids)
-        else:
-            token_type_embeds = 0
-        hidden_states = inputs_embeds + position_embeds + token_type_embeds
+        # inputs_embeds = self.wte(input_ids)
+        # position_embeds = self.wpe(position_ids)
+        # if token_type_ids is not None:
+        #     token_type_ids = token_type_ids.view(-1, token_type_ids.size(-1))
+        #     token_type_embeds = self.wte(token_type_ids)
+        # else:
+        #     token_type_embeds = 0
+
+        # # create hidden_states using inputs_emb and position_emb and token_type_emb
+        # hidden_states = inputs_embeds + position_embeds + token_type_embeds
+        hidden_states = input_hidden
 
         # present is a list for kv cache
         presents = []
@@ -206,16 +209,16 @@ class GPT2LMHeadModel(nn.Module):
     def __init__(self, config):
         super(GPT2LMHeadModel, self).__init__()
         self.transformer = GPT2Model(config)
-        self.lm_head = GPT2LMHead(self.transformer.wte.weight, config)
+        # self.lm_head = GPT2LMHead(self.transformer.wte.weight, config)
 
-    def set_tied(self):
-        """ Make sure we are sharing the embeddings
-        """
-        self.lm_head.set_embeddings_weights(self.transformer.wte.weight)
+    # def set_tied(self):
+    #     """ Make sure we are sharing the embeddings
+    #     """
+    #     self.lm_head.set_embeddings_weights(self.transformer.wte.weight)
 
-    def forward(self, input_ids, position_ids=None, token_type_ids=None, lm_labels=None, past=None):
-        hidden_states, presents = self.transformer(input_ids, position_ids, token_type_ids, past)
-        lm_logits = self.lm_head(hidden_states)
+    def forward(self, input_hidden, position_ids=None, token_type_ids=None, lm_labels=None, past=None):
+        hidden_states, presents = self.transformer(input_hidden, position_ids, token_type_ids, past)
+        # lm_logits = self.lm_head(hidden_states)
 
         # for training for inference lm_labels is None
         if lm_labels is not None:
@@ -224,4 +227,4 @@ class GPT2LMHeadModel(nn.Module):
             return loss
         
         # print("lm_logits: ", lm_logits.shape)
-        return lm_logits, presents
+        return hidden_states, presents

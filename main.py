@@ -66,10 +66,14 @@ def text_generator(state_dict):
 
     print(args.text)
     context_tokens = enc.encode(args.text)
+    print("context_tokens: ", context_tokens)
+    # input text:  hello my name is
+    # context_tokens:  [31373, 616, 1438, 318]
 
     generated = 0
     for _ in range(args.nsamples // args.batch_size):
         start_time = time.time_ns()
+
         out = sample_sequence(
             model=model, length=args.length,
             context=context_tokens  if not  args.unconditional else None,
@@ -77,9 +81,11 @@ def text_generator(state_dict):
             batch_size=args.batch_size,
             temperature=args.temperature, top_k=args.top_k, device=device
         )
+
+
         end_time = time.time_ns()
         run_time = (end_time - start_time)/(10 ** 9)
-        out = out[:, len(context_tokens):].tolist()
+        out = out[:, len(context_tokens):].tolist()     # slicing out input token
         print("=" * 40 + " ANALYSIS " + "=" * 40)
         print("output length:", len(out[0]))
         print("run_time:", run_time, "sec")
