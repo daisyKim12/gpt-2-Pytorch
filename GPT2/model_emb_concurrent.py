@@ -88,6 +88,8 @@ class Attention(nn.Module):
             past_key, past_value = layer_past[0].transpose(-2, -1), layer_past[1]  # transpose back cf below
             key = torch.cat((past_key, key), dim=-1)
             value = torch.cat((past_value, value), dim=-2)
+        
+        # present is for storing new kv values to kv cache
         present = torch.stack((key.transpose(-2, -1), value))  # transpose to have same shapes for stacking
         a = self._attn(query, key, value)
         a = self.merge_heads(a)
@@ -164,11 +166,12 @@ class GPT2Model(nn.Module):
         else:
             token_type_embeds = 0
         hidden_states = inputs_embeds + position_embeds + token_type_embeds
+
+        # present is a list for kv cache
         presents = []
         for block, layer_past in zip(self.h, past):
             hidden_states, present = block(hidden_states, layer_past)
             presents.append(present)
-        # starting here inverse encoding starts
         hidden_states = self.ln_f(hidden_states)
         output_shape = input_shape + (hidden_states.size(-1),)
                
@@ -188,13 +191,13 @@ class GPT2LMHead(nn.Module):
     def forward(self, hidden_state):
         # Truncated Language modeling logits (we remove the last token)
         # h_trunc = h[:, :-1].contiguous().view(-1, self.n_embd
-        if hidden_state.shape[1] > 1:
-            lm_logits = torch.zeros((1,hidden_state.shape[1], 50257), device='cuda:0')
-        else:
-            lm_logits = torch.zeros((1,1,50257), device='cuda:0')
-        #lm_logits = self.decoder(hidden_state)
-        #print(lm_logits.shape)
-        #print(lm_logits)
+
+        # if hidden_state.shape[1] > 1:
+        #     lm_logits = torch.zeros((1,hidden_state.shape[1], 50257), device='cuda:0')
+        # else:
+        #     lm_logits = torch.zeros((1,1,50257), device='cuda:0')
+        
+        lm_logits = self.decoder(hidden_state)
         return lm_logits
 
 class GPT2LMHeadModel(nn.Module):
@@ -211,8 +214,12 @@ class GPT2LMHeadModel(nn.Module):
     def forward(self, input_ids, position_ids=None, token_type_ids=None, lm_labels=None, past=None):
         hidden_states, presents = self.transformer(input_ids, position_ids, token_type_ids, past)
         lm_logits = self.lm_head(hidden_states)
+
+        # for training for inference lm_labels is None
         if lm_labels is not None:
             loss_fct = nn.CrossEntropyLoss(ignore_index=-1)
             loss = loss_fct(lm_logits.view(-1, lm_logits.size(-1)), lm_labels.view(-1))
             return loss
+        
+        # print("lm_logits: ", lm_logits.shape)
         return lm_logits, presents

@@ -70,6 +70,8 @@ def text_generator(state_dict):
     generated = 0
     for _ in range(args.nsamples // args.batch_size):
         start_time = time.time_ns()
+
+        print("=" * 40 + " RUN MODEL " + "=" * 40)
         out = sample_sequence(
             model=model, length=args.length,
             context=context_tokens  if not  args.unconditional else None,
@@ -77,9 +79,11 @@ def text_generator(state_dict):
             batch_size=args.batch_size,
             temperature=args.temperature, top_k=args.top_k, device=device
         )
+        print("printing out list ...")
+        print(out)
         end_time = time.time_ns()
         run_time = (end_time - start_time)/(10 ** 9)
-        out = out[:, len(context_tokens):].tolist()
+        out = out[:, len(context_tokens):].tolist()     # slicing input token
         print("=" * 40 + " ANALYSIS " + "=" * 40)
         print("output length:", len(out[0]))
         print("run_time:", run_time, "sec")
