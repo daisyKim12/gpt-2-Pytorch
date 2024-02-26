@@ -13,7 +13,7 @@ import time
 from GPT2.model_emb_concurrent import (GPT2LMHeadModel)
 from GPT2.utils import load_weight
 from GPT2.config import GPT2Config
-from GPT2.sample import sample_sequence
+from GPT2.sample_concurrent import sample_sequence
 from GPT2.encoder import get_encoder
 
 def append_runtime(filename, runtime):
@@ -95,8 +95,6 @@ def text_generator(state_dict):
         print("run_time:", run_time, "sec")
         print("run_time per token:", run_time / len(out[0]), "sec")
         append_runtime('runtimes.txt', run_time / len(out[0]))
-
-        # inverse-embedding
         
         # scalar to string
         for i in range(args.batch_size):

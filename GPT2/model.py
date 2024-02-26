@@ -145,11 +145,17 @@ class GPT2Model(nn.Module):
         self.decoder.weight = model_embeddings_weights  # Tied weights
 
     def forward(self, input_ids, position_ids=None, token_type_ids=None, past=None):
+        print("model past: " ,type(past))
+
+        # first input past type is none
         if past is None:
             past_length = 0
             past = [None] * len(self.h)
+        # after prefill past type is a list
         else:
             past_length = past[0][0].size(-2)
+
+        print("position_ids: ", position_ids)
         if position_ids is None:
             position_ids = torch.arange(past_length, input_ids.size(-1) + past_length, dtype=torch.long,
                                         device=input_ids.device)
@@ -160,6 +166,7 @@ class GPT2Model(nn.Module):
         position_ids = position_ids.view(-1, position_ids.size(-1))
 
         print("input_ids: ", input_ids)
+        print("token_type_ids: ", token_type_ids)
         inputs_embeds = self.wte(input_ids)
         position_embeds = self.wpe(position_ids)
         if token_type_ids is not None:

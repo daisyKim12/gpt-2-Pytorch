@@ -5,6 +5,8 @@
 '''
 import torch
 import torch.nn.functional as F
+import torch..nn as nn
+from GPT2.config import GPT2Config
 from tqdm import trange
 
 def top_k_logits(logits, k):
@@ -15,27 +17,26 @@ def top_k_logits(logits, k):
     return torch.where(logits < min_values, torch.ones_like(logits, dtype=logits.dtype) * -1e10, logits)
 
 def embed_context(input_ids):
-    if past is None:
-        past_length = 0
-        past = [None] * len(self.h)
-    else:
-        past_length = past[0][0].size(-2)
-    if position_ids is None:
-        position_ids = torch.arange(past_length, input_ids.size(-1) + past_length, dtype=torch.long,
-                                    device=input_ids.device)
-        position_ids = position_ids.unsqueeze(0).expand_as(input_ids)
 
+    # past
+    past_length = 0
+    past = [None] * len(self.h)
+    # position_ids
+    position_ids = torch.arange(past_length, input_ids.size(-1) + past_length, dtype=torch.long, device=input_ids.device)
+    position_ids = position_ids.unsqueeze(0).expand_as(input_ids)
+    # input_shape
     input_shape = input_ids.size()
     input_ids = input_ids.view(-1, input_ids.size(-1))
     position_ids = position_ids.view(-1, position_ids.size(-1))
+    # input_embeds
+    config = GPT2Config()
+    wte = nn.Embedding(config.vocab_size, config.n_embd)
+    wpe = nn.Embedding(config.n_positions, config.n_embd)
 
-    inputs_embeds = self.wte(input_ids)
-    position_embeds = self.wpe(position_ids)
-    if token_type_ids is not None:
-        token_type_ids = token_type_ids.view(-1, token_type_ids.size(-1))
-        token_type_embeds = self.wte(token_type_ids)
-    else:
-        token_type_embeds = 0
+    inputs_embeds = wte(input_ids)
+    position_embeds = wpe(position_ids)
+
+    token_type_embeds = 0
 
     # create hidden_states using inputs_emb and position_emb and token_type_emb
     hidden_states = inputs_embeds + position_embeds + token_type_embeds
@@ -59,7 +60,7 @@ def sample_sequence(model, length, start_token=None, batch_size=None, context=No
             # logits, past = model(prev, past=past)
             hidden_states, past = model(prev, past=past)
             
-            # save hidden_states
+            # print hidden_states
             print(i, ": ", hidden_states)
 
             prev = hidden_states
