@@ -270,3 +270,19 @@ class GPT2LMHeadModel(nn.Module):
         
         # print("lm_logits: ", lm_logits.shape)
         return hidden_states, presents
+    
+
+class GPT2InverseEmbed(nn.Module):
+    def __init__(self, config):
+        super(GPT2InverseEmbed, self).__init__()
+        self.transformer = GPT2Model(config)
+        self.lm_head = GPT2LMHead(self.transformer.wte.weight, config)
+
+    def set_tied(self):
+        self.lm_head.set_embeddings_weights(self.transformer.wte.weight)
+    
+    def forward(self, input_ids, position_ids=None, token_type_ids=None, lm_labels=None, past=None):
+        
+        lm_logits = self.lm_head(hidden_states)
+
+        return lm_logits

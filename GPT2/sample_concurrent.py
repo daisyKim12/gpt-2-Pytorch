@@ -21,7 +21,7 @@ def sample_sequence(model, length, start_token=None, batch_size=None, context=No
     context = torch.tensor(context, device=device, dtype=torch.long).unsqueeze(0).repeat(batch_size, 1)
 
     prev = context              # saving previous token 
-    output = None            # appending token in every step
+    output = []            # appending token in every step
     past = None                 # kv cache
     
     with torch.no_grad():
@@ -33,7 +33,14 @@ def sample_sequence(model, length, start_token=None, batch_size=None, context=No
             print("hidden_states: ", prev.shape)
             hidden_states, past = model(prev, past=past)
 
+
+
+            """ need to fix this part """
+            output.append(hidden_states[0][-1].unsqueeze(0))
             prev = hidden_states[0][-1].unsqueeze(0).unsqueeze(0)
+
+        output = torch.tensor(output)
+        print("sample > output: ", output, "\n")
 
 
     # # concurrent token generation

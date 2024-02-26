@@ -85,24 +85,24 @@ def text_generator(state_dict):
             temperature=args.temperature, top_k=args.top_k, device=device
         )
 
-        print("printing out list ...")
-        print(out)
-        end_time = time.time_ns()
-        run_time = (end_time - start_time)/(10 ** 9)
-        out = out[:, len(context_tokens):].tolist()     # slicing out input token
-        print("=" * 40 + " ANALYSIS " + "=" * 40)
-        print("output length:", len(out[0]))
-        print("run_time:", run_time, "sec")
-        print("run_time per token:", run_time / len(out[0]), "sec")
-        append_runtime('runtimes.txt', run_time / len(out[0]))
+        # print("printing out list ...")
+        # print(out)
+        # end_time = time.time_ns()
+        # run_time = (end_time - start_time)/(10 ** 9)
+        # out = out[:, len(context_tokens):].tolist()     # slicing out input token
+        # print("=" * 40 + " ANALYSIS " + "=" * 40)
+        # print("output length:", len(out[0]))
+        # print("run_time:", run_time, "sec")
+        # print("run_time per token:", run_time / len(out[0]), "sec")
+        # append_runtime('runtimes.txt', run_time / len(out[0]))
         
-        # scalar to string
-        for i in range(args.batch_size):
-            generated += 1
-            text = enc.decode(out[i])
-            if args.quiet is False:
-                print("=" * 40 + " SAMPLE " + str(generated) + " " + "=" * 40)
-            print(text)
+        # # scalar to string
+        # for i in range(args.batch_size):
+        #     generated += 1
+        #     text = enc.decode(out[i])
+        #     if args.quiet is False:
+        #         print("=" * 40 + " SAMPLE " + str(generated) + " " + "=" * 40)
+        #     print(text)
 
 if __name__ == '__main__':
     if os.path.exists('gpt2-pytorch_model.bin'):
