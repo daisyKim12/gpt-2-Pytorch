@@ -29,11 +29,11 @@ def sample_sequence(model, length, start_token=None, batch_size=None, context=No
         for i in range(10):
             # run model
             # logits, past = model(prev, past=past)
-            print("<iteration ", i, ">")
+            print("< iteration ", i, ">")
             print("hidden_states: ", prev.shape)
             hidden_states, past = model(prev, past=past)
 
-            # prev = hidden_states[-1].reshape(1, 1, hidden_states.shape[2]) 
+            prev = hidden_states[0][-1].unsqueeze(0).unsqueeze(0)
 
 
     # # concurrent token generation

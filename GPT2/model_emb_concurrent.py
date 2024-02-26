@@ -255,7 +255,8 @@ class GPT2LMHeadModel(nn.Module):
 
     def forward(self, input_ids, position_ids=None, token_type_ids=None, lm_labels=None, past=None):
         
-        if input_ids.shape[1] > 1:
+        if len(input_ids.shape) <= 2:
+        # if input_ids.shape[1] > 1:
             input_ids = self.embedding(input_ids, position_ids, token_type_ids, past)
 
         hidden_states, presents = self.transformer(input_ids, position_ids, token_type_ids, past)
