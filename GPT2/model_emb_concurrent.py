@@ -127,7 +127,7 @@ class Block(nn.Module):
 
 class GPT2Embed(nn.Module):
     def __init__(self, config):
-        super(GPT2Model, self).__init__()
+        super(GPT2Embed, self).__init__()
         self.n_layer = config.n_layer
         self.n_embd = config.n_embd
         self.n_vocab = config.vocab_size
@@ -143,7 +143,7 @@ class GPT2Embed(nn.Module):
         self.decoder = nn.Linear(embed_shape[1], embed_shape[0], bias=False)
         self.decoder.weight = model_embeddings_weights  # Tied weights  
     
-    def forward(self, input_hidden, position_ids=None, token_type_ids=None, past=None):
+    def forward(self, input_ids, position_ids=None, token_type_ids=None, past=None):
         if past is None:
             past_length = 0
             past = [None] * len(self.h)
@@ -190,9 +190,18 @@ class GPT2Model(nn.Module):
         self.decoder = nn.Linear(embed_shape[1], embed_shape[0], bias=False)
         self.decoder.weight = model_embeddings_weights  # Tied weights
 
-    def forward(self, input_hidden, position_ids=None, token_type_ids=None, past=None):
+    def forward(self, input_ids, position_ids=None, token_type_ids=None, past=None):
 
-        hidden_states = input_hidden
+        print("GPT2Model > input_ids: ", input_ids.shape)
+        
+        if past is None:
+            past_length = 0
+            past = [None] * len(self.h)
+        else:
+            past_length = past[0][0].size(-2)
+
+        input_shape = torch.Size([1, input_ids.shape[1]])
+        hidden_states = input_ids
 
         # present is a list for kv cache
         presents = []
@@ -201,6 +210,10 @@ class GPT2Model(nn.Module):
             presents.append(present)
         hidden_states = self.ln_f(hidden_states)
         output_shape = input_shape + (hidden_states.size(-1),)
+
+        print("GPT2Model > hidden_state: ", hidden_states.shape)
+        print("GPT2Model > output_shape: ", output_shape)
+        print("GPT2Model > output: ", hidden_states.view(*output_shape).shape)
                
         return hidden_states.view(*output_shape), presents
 
@@ -240,12 +253,12 @@ class GPT2LMHeadModel(nn.Module):
         """
         self.lm_head.set_embeddings_weights(self.transformer.wte.weight)
 
-    def forward(self, input_hidden, position_ids=None, token_type_ids=None, lm_labels=None, past=None):
+    def forward(self, input_ids, position_ids=None, token_type_ids=None, lm_labels=None, past=None):
         
-        if input_hidden.shape[1] > 1:
-            input_hidden = self.embedding(input_hidden, position_ids, token_type_ids, past)
+        if input_ids.shape[1] > 1:
+            input_ids = self.embedding(input_ids, position_ids, token_type_ids, past)
 
-        hidden_states, presents = self.transformer(input_hidden, position_ids, token_type_ids, past)
+        hidden_states, presents = self.transformer(input_ids, position_ids, token_type_ids, past)
         # lm_logits = self.lm_head(hidden_states)
 
         # for training for inference lm_labels is None

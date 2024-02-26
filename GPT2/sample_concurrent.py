@@ -32,7 +32,7 @@ def sample_sequence(model, length, start_token=None, batch_size=None, context=No
             hidden_states, past = model(prev, past=past)
             
             # print hidden_states
-            print(i, ": ", hidden_states)
+            print("sample > iteration", i, ": ", hidden_states, "\n", hidden_states.shape)
 
             prev = hidden_states
 

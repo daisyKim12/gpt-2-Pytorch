@@ -32,7 +32,7 @@ def sample_sequence(model, length, start_token=None, batch_size=None, context=No
     past = None
     with torch.no_grad():
         # for i in range(length): # length is 512
-        for i in range(10):
+        for i in range(3):
             # run model
             logits, past = model(prev, past=past)
 
@@ -44,6 +44,7 @@ def sample_sequence(model, length, start_token=None, batch_size=None, context=No
             
             ## inverse embedding after linear layer
             logits = logits[:, -1, :] / temperature 
+            print("sample > logits: ", logits.shape)            
             logits = top_k_logits(logits, k=top_k)
             log_probs = F.softmax(logits, dim=-1)
             if sample:

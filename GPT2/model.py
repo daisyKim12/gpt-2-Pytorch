@@ -168,6 +168,7 @@ class GPT2Model(nn.Module):
         input_ids = input_ids.view(-1, input_ids.size(-1))
         position_ids = position_ids.view(-1, position_ids.size(-1))
 
+        print("input_shape: ", input_shape, type(input_shape))
         print("input_ids: ", input_ids)
         print("token_type_ids: ", token_type_ids)
         inputs_embeds = self.wte(input_ids)
@@ -191,7 +192,11 @@ class GPT2Model(nn.Module):
             presents.append(present)
         hidden_states = self.ln_f(hidden_states)
         output_shape = input_shape + (hidden_states.size(-1),)
-               
+
+        print("GPT2Model > hidden_state: ", hidden_states.shape)
+        print("GPT2Model > output_shape: ", output_shape)
+        print("GPT2Model > output: ", hidden_states.view(*output_shape).shape)
+
         return hidden_states.view(*output_shape), presents
 
 # linear layer after attention layer and before softmax layer
@@ -214,7 +219,6 @@ class GPT2LMHead(nn.Module):
         #     lm_logits = torch.zeros((1,hidden_state.shape[1], 50257), device='cuda:0')
         # else:
         #     lm_logits = torch.zeros((1,1,50257), device='cuda:0')
-        
         lm_logits = self.decoder(hidden_state)
         return lm_logits
 
@@ -235,7 +239,10 @@ class GPT2LMHeadModel(nn.Module):
         print("input_ids.size: ", input_ids.shape[1])
 
         hidden_states, presents = self.transformer(input_ids, position_ids, token_type_ids, past)
+        print("GPT2LMHeadModel > after transformer > hidden_states: ", hidden_states.shape)
         lm_logits = self.lm_head(hidden_states)
+        print("GPT2LMHeadModel > after inverse enbedding > lm_logits: ", lm_logits.shape)
+
 
         # for training for inference lm_labels is None
         if lm_labels is not None:
