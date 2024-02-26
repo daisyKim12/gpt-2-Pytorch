@@ -29,12 +29,12 @@ def sample_sequence(model, length, start_token=None, batch_size=None, context=No
         for i in range(10):
             # run model
             # logits, past = model(prev, past=past)
+            print("<iteration ", i, ">")
+            print("hidden_states: ", prev.shape)
             hidden_states, past = model(prev, past=past)
-            
-            # print hidden_states
-            print("sample > iteration", i, ": ", hidden_states, "\n", hidden_states.shape)
 
-            prev = hidden_states
+            # prev = hidden_states[-1].reshape(1, 1, hidden_states.shape[2]) 
+
 
     # # concurrent token generation
     # # linear layer
