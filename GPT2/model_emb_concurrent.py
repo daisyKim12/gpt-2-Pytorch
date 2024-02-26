@@ -125,6 +125,52 @@ class Block(nn.Module):
         x = x + m
         return x, present
 
+class GPT2Embed(nn.Module):
+    def __init__(self, config):
+        super(GPT2Model, self).__init__()
+        self.n_layer = config.n_layer
+        self.n_embd = config.n_embd
+        self.n_vocab = config.vocab_size
+
+        self.wte = nn.Embedding(config.vocab_size, config.n_embd)
+        self.wpe = nn.Embedding(config.n_positions, config.n_embd)
+        block = Block(config.n_ctx, config, scale=True)
+        self.h = nn.ModuleList([copy.deepcopy(block) for _ in range(config.n_layer)])
+        self.ln_f = LayerNorm(config.n_embd, eps=config.layer_norm_epsilon)
+
+    def set_embeddings_weights(self, model_embeddings_weights):
+        embed_shape = model_embeddings_weights.shape
+        self.decoder = nn.Linear(embed_shape[1], embed_shape[0], bias=False)
+        self.decoder.weight = model_embeddings_weights  # Tied weights  
+    
+    def forward(self, input_hidden, position_ids=None, token_type_ids=None, past=None):
+        if past is None:
+            past_length = 0
+            past = [None] * len(self.h)
+        else:
+            past_length = past[0][0].size(-2)
+        if position_ids is None:
+            position_ids = torch.arange(past_length, input_ids.size(-1) + past_length, dtype=torch.long,
+                                        device=input_ids.device)
+            position_ids = position_ids.unsqueeze(0).expand_as(input_ids)
+
+        input_shape = input_ids.size()
+        input_ids = input_ids.view(-1, input_ids.size(-1))
+        position_ids = position_ids.view(-1, position_ids.size(-1))
+
+        inputs_embeds = self.wte(input_ids)
+        position_embeds = self.wpe(position_ids)
+        if token_type_ids is not None:
+            token_type_ids = token_type_ids.view(-1, token_type_ids.size(-1))
+            token_type_embeds = self.wte(token_type_ids)
+        else:
+            token_type_embeds = 0
+
+        # create hidden_states using inputs_emb and position_emb and token_type_emb
+        hidden_states = inputs_embeds + position_embeds + token_type_embeds
+
+        return hidden_states
+
 # contains embedding layer
 class GPT2Model(nn.Module):
     def __init__(self, config):
@@ -145,30 +191,7 @@ class GPT2Model(nn.Module):
         self.decoder.weight = model_embeddings_weights  # Tied weights
 
     def forward(self, input_hidden, position_ids=None, token_type_ids=None, past=None):
-        # if past is None:
-        #     past_length = 0
-        #     past = [None] * len(self.h)
-        # else:
-        #     past_length = past[0][0].size(-2)
-        # if position_ids is None:
-        #     position_ids = torch.arange(past_length, input_ids.size(-1) + past_length, dtype=torch.long,
-        #                                 device=input_ids.device)
-        #     position_ids = position_ids.unsqueeze(0).expand_as(input_ids)
 
-        # input_shape = input_ids.size()
-        # input_ids = input_ids.view(-1, input_ids.size(-1))
-        # position_ids = position_ids.view(-1, position_ids.size(-1))
-
-        # inputs_embeds = self.wte(input_ids)
-        # position_embeds = self.wpe(position_ids)
-        # if token_type_ids is not None:
-        #     token_type_ids = token_type_ids.view(-1, token_type_ids.size(-1))
-        #     token_type_embeds = self.wte(token_type_ids)
-        # else:
-        #     token_type_embeds = 0
-
-        # # create hidden_states using inputs_emb and position_emb and token_type_emb
-        # hidden_states = inputs_embeds + position_embeds + token_type_embeds
         hidden_states = input_hidden
 
         # present is a list for kv cache
@@ -208,15 +231,20 @@ class GPT2LMHead(nn.Module):
 class GPT2LMHeadModel(nn.Module):
     def __init__(self, config):
         super(GPT2LMHeadModel, self).__init__()
+        self.embedding = GPT2Embed(config)
         self.transformer = GPT2Model(config)
-        # self.lm_head = GPT2LMHead(self.transformer.wte.weight, config)
+        self.lm_head = GPT2LMHead(self.transformer.wte.weight, config)
 
-    # def set_tied(self):
-    #     """ Make sure we are sharing the embeddings
-    #     """
-    #     self.lm_head.set_embeddings_weights(self.transformer.wte.weight)
+    def set_tied(self):
+        """ Make sure we are sharing the embeddings
+        """
+        self.lm_head.set_embeddings_weights(self.transformer.wte.weight)
 
     def forward(self, input_hidden, position_ids=None, token_type_ids=None, lm_labels=None, past=None):
+        
+        if input_hidden.shape[1] > 1:
+            input_hidden = self.embedding(input_hidden, position_ids, token_type_ids, past)
+
         hidden_states, presents = self.transformer(input_hidden, position_ids, token_type_ids, past)
         # lm_logits = self.lm_head(hidden_states)
 

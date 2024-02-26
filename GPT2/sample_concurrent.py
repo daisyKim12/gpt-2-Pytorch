@@ -5,7 +5,7 @@
 '''
 import torch
 import torch.nn.functional as F
-import torch..nn as nn
+import torch.nn as nn
 from GPT2.config import GPT2Config
 from tqdm import trange
 
@@ -16,42 +16,13 @@ def top_k_logits(logits, k):
     min_values = values[:, -1]
     return torch.where(logits < min_values, torch.ones_like(logits, dtype=logits.dtype) * -1e10, logits)
 
-def embed_context(input_ids):
-
-    # past
-    past_length = 0
-    past = [None] * len(self.h)
-    # position_ids
-    position_ids = torch.arange(past_length, input_ids.size(-1) + past_length, dtype=torch.long, device=input_ids.device)
-    position_ids = position_ids.unsqueeze(0).expand_as(input_ids)
-    # input_shape
-    input_shape = input_ids.size()
-    input_ids = input_ids.view(-1, input_ids.size(-1))
-    position_ids = position_ids.view(-1, position_ids.size(-1))
-    # input_embeds
-    config = GPT2Config()
-    wte = nn.Embedding(config.vocab_size, config.n_embd)
-    wpe = nn.Embedding(config.n_positions, config.n_embd)
-
-    inputs_embeds = wte(input_ids)
-    position_embeds = wpe(position_ids)
-
-    token_type_embeds = 0
-
-    # create hidden_states using inputs_emb and position_emb and token_type_emb
-    hidden_states = inputs_embeds + position_embeds + token_type_embeds
-    return hidden_states
-
 def sample_sequence(model, length, start_token=None, batch_size=None, context=None, temperature=1, top_k=0, device='cuda', sample=True):
 
     context = torch.tensor(context, device=device, dtype=torch.long).unsqueeze(0).repeat(batch_size, 1)
 
-    # embed context
-    context = embed_context(context)
-
-    prev = context
-    output = context
-    past = None
+    prev = context              # saving previous token 
+    output = None            # appending token in every step
+    past = None                 # kv cache
     
     with torch.no_grad():
         # for i in range(length): # length is 512

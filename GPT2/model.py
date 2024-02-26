@@ -145,7 +145,6 @@ class GPT2Model(nn.Module):
         self.decoder.weight = model_embeddings_weights  # Tied weights
 
     def forward(self, input_ids, position_ids=None, token_type_ids=None, past=None):
-        print("model past: " ,type(past))
 
         # first input past type is none
         if past is None:
@@ -155,11 +154,15 @@ class GPT2Model(nn.Module):
         else:
             past_length = past[0][0].size(-2)
 
+        print("past_length: ", past_length)
+        print("self_h: ", len(self.h))
         print("position_ids: ", position_ids)
+        
         if position_ids is None:
             position_ids = torch.arange(past_length, input_ids.size(-1) + past_length, dtype=torch.long,
                                         device=input_ids.device)
             position_ids = position_ids.unsqueeze(0).expand_as(input_ids)
+        
 
         input_shape = input_ids.size()
         input_ids = input_ids.view(-1, input_ids.size(-1))
@@ -227,6 +230,10 @@ class GPT2LMHeadModel(nn.Module):
         self.lm_head.set_embeddings_weights(self.transformer.wte.weight)
 
     def forward(self, input_ids, position_ids=None, token_type_ids=None, lm_labels=None, past=None):
+        
+        print("model > input_ids: ", input_ids)
+        print("input_ids.size: ", input_ids.shape[1])
+
         hidden_states, presents = self.transformer(input_ids, position_ids, token_type_ids, past)
         lm_logits = self.lm_head(hidden_states)
 
