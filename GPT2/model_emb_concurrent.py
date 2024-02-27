@@ -282,7 +282,9 @@ class GPT2InverseEmbed(nn.Module):
         self.lm_head.set_embeddings_weights(self.transformer.wte.weight)
     
     def forward(self, input_ids, position_ids=None, token_type_ids=None, lm_labels=None, past=None):
-        
-        lm_logits = self.lm_head(hidden_states)
+
+        print("INVERSE > before logits:", input_ids)
+        lm_logits = self.lm_head(input_ids)
+        print("INVERSE > after logits:", lm_logits)
 
         return lm_logits

@@ -16,55 +16,67 @@ def top_k_logits(logits, k):
     min_values = values[:, -1]
     return torch.where(logits < min_values, torch.ones_like(logits, dtype=logits.dtype) * -1e10, logits)
 
-def sample_sequence(model, length, start_token=None, batch_size=None, context=None, temperature=1, top_k=0, device='cuda', sample=True):
+def sample_sequence(model, inv_model, length, start_token=None, batch_size=None, context=None, temperature=1, top_k=0, device='cuda', sample=True):
 
     context = torch.tensor(context, device=device, dtype=torch.long).unsqueeze(0).repeat(batch_size, 1)
 
     prev = context              # saving previous token 
-    output = []            # appending token in every step
+    outputs = None            # appending token in every step
     past = None                 # kv cache
+    result = None
     
     with torch.no_grad():
+
+
+        print("< iteration - >")
+        print("SAMPLE > pre: ", prev.shape)
+        hidden_states, past = model(prev, past=past)
+
+        """ need to fix here """
+        outputs = hidden_states[0].unsqueeze(0)
+        prev = hidden_states[0][-1].unsqueeze(0).unsqueeze(0)
+        print("SAMPLE > outputs: ", outputs.shape)
+        print("SAMPLE > prev: ", prev.shape)
+
         # for i in range(length): # length is 512
-        for i in range(10):
+        for i in range(3):
             # run model
             # logits, past = model(prev, past=past)
             print("< iteration ", i, ">")
-            print("hidden_states: ", prev.shape)
+            print("SAMPLE > pre: ", prev.shape)
             hidden_states, past = model(prev, past=past)
 
 
-
-            """ need to fix this part """
-            output.append(hidden_states[0][-1].unsqueeze(0))
+            """ need to fix here """
             prev = hidden_states[0][-1].unsqueeze(0).unsqueeze(0)
-
-        output = torch.tensor(output)
-        print("sample > output: ", output, "\n")
-
-
-    # # concurrent token generation
-    # # linear layer
-
-    # # inverse-embedding
-    # print("<iteration " , i, ">")
-    # print("logits: (type)", type(logits), "(shape) ", logits.shape)
-    # print("past <kv cache>: (type)", type(past), "(size) ", len(past))
-    # # logits: (type) <class 'torch.Tensor'> (shape)  torch.Size([1, 1, 50257])
-    # # past <kv cache>: (type) <class 'list'> (size)  12
+            outputs = torch.cat((outputs, prev), dim = 1)
+            print("SAMPLE > prev: ", prev.shape)
+            print("SAMPLE > outputs: ", outputs.shape)
+        
+        print("SAMPLE > total output: ", outputs.shape)
+        logits = inv_model(outputs)
+        print("SAMPLE > logits: ", logits, logits.shape)
     
-    # # inverse embedding after linear layer
-    # logits = logits[:, -1, :] / temperature 
-    # logits = top_k_logits(logits, k=top_k)
-    # log_probs = F.softmax(logits, dim=-1)
-    # if sample:
-    #     prev = torch.multinomial(log_probs, num_samples=1)
-    # else:
-    #     _, prev = torch.topk(log_probs, k=1, dim=-1)
-    
-    # print("prev: ", prev)
-    # # prev:  tensor([[661]], device='cuda:0')
+        """ starting here """
+        # inverse embedding after linear layer
 
-    # output = torch.cat((output, prev), dim=1)
+        vector = logits[:, 0, :] / temperature 
+        print(vector)
+        vector = top_k_logits(vector, k=top_k)
+        log_probs = F.softmax(vector, dim=-1)
+        vector = torch.multinomial(log_probs, num_samples=1)
+        result = vector
+        
+        for i in range(1, logits.shape[1]):
 
-    return output
+            vector = logits[:, i, :] / temperature 
+            print(vector)
+            vector = top_k_logits(vector, k=top_k)
+            log_probs = F.softmax(vector, dim=-1)
+            vector = torch.multinomial(log_probs, num_samples=1)
+
+            result = torch.cat((result, vector), dim = 1)
+
+        print("SAMPLE > result: ", result, '\n', result.shape)
+
+    return result

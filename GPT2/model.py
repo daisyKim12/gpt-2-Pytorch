@@ -241,7 +241,7 @@ class GPT2LMHeadModel(nn.Module):
         hidden_states, presents = self.transformer(input_ids, position_ids, token_type_ids, past)
         print("GPT2LMHeadModel > after transformer > hidden_states: ", hidden_states.shape)
         lm_logits = self.lm_head(hidden_states)
-        print("GPT2LMHeadModel > after inverse enbedding > lm_logits: ", lm_logits.shape)
+        print("GPT2LMHeadModel > after inverse enbedding > lm_logits: ", lm_logits, lm_logits.shape)
 
 
         # for training for inference lm_labels is None

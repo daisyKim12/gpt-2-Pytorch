@@ -43,7 +43,7 @@ def sample_sequence(model, length, start_token=None, batch_size=None, context=No
             # past <kv cache>: (type) <class 'list'> (size)  12
             
             ## inverse embedding after linear layer
-            print("sample > logits > before slicing: ", logits)
+            print("sample > logits > before slicing: ", logits, logits.shape)
             logits = logits[:, -1, :] / temperature 
             print("sample > logits: ", logits.shape)            
             logits = top_k_logits(logits, k=top_k)
@@ -57,5 +57,7 @@ def sample_sequence(model, length, start_token=None, batch_size=None, context=No
             # prev:  tensor([[661]], device='cuda:0')
 
             output = torch.cat((output, prev), dim=1)
+
+            print("SAMPLE > result: ", output, '\n', output.shape)
 
     return output

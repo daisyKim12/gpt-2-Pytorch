@@ -11,6 +11,7 @@ import argparse
 import numpy as np
 import time
 from GPT2.model_emb_concurrent import (GPT2LMHeadModel)
+from GPT2.model_emb_concurrent import (GPT2InverseEmbed)
 from GPT2.utils import load_weight
 from GPT2.config import GPT2Config
 from GPT2.sample_concurrent import sample_sequence
@@ -59,6 +60,11 @@ def text_generator(state_dict):
     model.to(device)
     model.eval()
 
+    inv_model = GPT2InverseEmbed(config)
+    inv_model = load_weight(inv_model, state_dict)
+    inv_model.to(device)
+    inv_model.eval()
+
     if args.length == -1:
         args.length = config.n_ctx // 2
     elif args.length > config.n_ctx:
@@ -78,31 +84,32 @@ def text_generator(state_dict):
 
         print("=" * 40 + " RUN MODEL " + "=" * 40)
         out = sample_sequence(
-            model=model, length=args.length,
+            model=model, inv_model = inv_model, length=args.length,
             context=context_tokens  if not  args.unconditional else None,
             start_token=enc.encoder['<|endoftext|>'] if args.unconditional else None,
             batch_size=args.batch_size,
             temperature=args.temperature, top_k=args.top_k, device=device
         )
 
-        # print("printing out list ...")
-        # print(out)
-        # end_time = time.time_ns()
-        # run_time = (end_time - start_time)/(10 ** 9)
+        print("printing out list ...")
+        print(out)
+        end_time = time.time_ns()
+        run_time = (end_time - start_time)/(10 ** 9)
         # out = out[:, len(context_tokens):].tolist()     # slicing out input token
-        # print("=" * 40 + " ANALYSIS " + "=" * 40)
-        # print("output length:", len(out[0]))
-        # print("run_time:", run_time, "sec")
-        # print("run_time per token:", run_time / len(out[0]), "sec")
-        # append_runtime('runtimes.txt', run_time / len(out[0]))
+        out = out.tolist()
+        print("=" * 40 + " ANALYSIS " + "=" * 40)
+        print("output length:", len(out[0]))
+        print("run_time:", run_time, "sec")
+        print("run_time per token:", run_time / len(out[0]), "sec")
+        append_runtime('runtimes.txt', run_time / len(out[0]))
         
-        # # scalar to string
-        # for i in range(args.batch_size):
-        #     generated += 1
-        #     text = enc.decode(out[i])
-        #     if args.quiet is False:
-        #         print("=" * 40 + " SAMPLE " + str(generated) + " " + "=" * 40)
-        #     print(text)
+        # scalar to string
+        for i in range(args.batch_size):
+            generated += 1
+            text = enc.decode(out[i])
+            if args.quiet is False:
+                print("=" * 40 + " SAMPLE " + str(generated) + " " + "=" * 40)
+            print(text)
 
 if __name__ == '__main__':
     if os.path.exists('gpt2-pytorch_model.bin'):
